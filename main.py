@@ -92,7 +92,7 @@ def main():
     llm = Llama(
         model_path=f"./models/{os.getenv('LLM')}",
         n_gpu_layers=-1,
-        n_ctx=15000,
+        n_ctx=2000,
         flash_attn=True,
         n_threads=os.cpu_count(),
         verbose=True
@@ -119,7 +119,7 @@ def main():
                 top_p=0.9,
                 repeat_penalty=1.1,
             )
-            text_response = response["choices"][0]["text"].strip()
+            text_response = response["choices"][0]["text"].strip().replace('"', '')
             print(text_response)
 
             pyperclip.copy(text_response)
