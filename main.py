@@ -4,10 +4,28 @@ import subprocess
 
 from dotenv import load_dotenv
 import spotipy
+from llama_cpp import Llama
 from spotipy.oauth2 import SpotifyOAuth
 
 # Load environment variables
 load_dotenv()
+
+def generate_announcement_prompt(track_name, artist_names):
+    station_name = os.getenv("RADIO_NAME", "Gamedio FM")
+    station_description = os.getenv("RADIO_DESCRIPTION", "Your ultimate gaming companion")
+    
+    prompt = (
+        f"<|system|>\n"
+        f"You are a radio station announcer. Generate a very short, upbeat announcement. "
+        f"Include the station name, description, and the currently playing song. "
+        f"Format it as a radio shout-out. Keep it to one sentence.<|end|>\n"
+        f"<|user|>\n"
+        f"Station: {station_name}\n"
+        f"Description: {station_description}\n"
+        f"Currently playing: {track_name} by {artist_names}<|end|>\n"
+        f"<|assistant|>\n"
+    )
+    return prompt
 
 def play_beep():
     sound_paths = [
@@ -26,6 +44,7 @@ def play_beep():
     
     print("\a", end="", flush=True)
 
+
 def main():
     spotify_client_id = os.getenv("SPOTIFY_CLIENT_ID")
     spotify_client_secret = os.getenv("SPOTIFY_CLIENT_SECRET")
@@ -38,6 +57,15 @@ def main():
         scope="user-library-read,user-read-currently-playing,user-read-playback-state",
     ))
 
+    llm = Llama(
+        model_path=f"./models/{os.getenv('LLM')}",
+        n_gpu_layers=-1,
+        n_ctx=15000,
+        flash_attn=True,
+        n_threads=os.cpu_count(),
+        verbose=True
+    )
+
     while True:
         for i in range(3, 0, -1):
             print(f"Countdown: {i}")
@@ -49,11 +77,24 @@ def main():
             track = results['item']
             artist_names = ', '.join([artist['name'] for artist in track['artists']])
             track_name = track['name']
-            print(f"Currently playing: {track_name} by {artist_names}")
+            
+            prompt = generate_announcement_prompt(track_name, artist_names)
+            print("--- Generated Prompt for LLM ---")
+            print(prompt)
+            print("--------------------------------")
+
+            response = llm(
+                prompt,
+                max_tokens=8000,
+                temperature=0.1,
+                top_p=0.9,
+                repeat_penalty=1.1,
+            )
+            text_response = response["choices"][0]["text"].strip()
+            print(text_response)
+
         else:
             print("No track is currently playing.")
-
-        play_beep()
 
         time.sleep(5)
 
