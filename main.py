@@ -92,7 +92,7 @@ def main():
     llm = Llama(
         model_path=f"./models/{os.getenv('LLM')}",
         n_gpu_layers=-1,
-        n_ctx=2000,
+        n_ctx=200,
         flash_attn=True,
         n_threads=os.cpu_count(),
         verbose=True
@@ -114,7 +114,7 @@ def main():
 
             response = llm(
                 prompt,
-                max_tokens=8000,
+                max_tokens=200,
                 temperature=0.1,
                 top_p=0.9,
                 repeat_penalty=1.1,
@@ -128,7 +128,7 @@ def main():
         else:
             print("No track is currently playing.")
 
-        time.sleep(20)
+        time.sleep(180)
 
 
 if __name__ == "__main__":
