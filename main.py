@@ -2,6 +2,9 @@ import os
 import time
 import subprocess
 
+import pyperclip
+from Xlib import X, display, XK
+from Xlib.ext import xtest
 from dotenv import load_dotenv
 import spotipy
 from llama_cpp import Llama
@@ -44,6 +47,35 @@ def play_beep():
     
     print("\a", end="", flush=True)
 
+def simulate_broadcast():
+    d = display.Display()
+    
+    def send_key(keysym, modifiers=[]):
+        keycode = d.keysym_to_keycode(keysym)
+        
+        for mod in modifiers:
+            xtest.fake_input(d, X.KeyPress, d.keysym_to_keycode(mod))
+        
+        xtest.fake_input(d, X.KeyPress, keycode)
+        xtest.fake_input(d, X.KeyRelease, keycode)
+        
+        # Release modifiers (in reverse order)
+        for mod in reversed(modifiers):
+            xtest.fake_input(d, X.KeyRelease, d.keysym_to_keycode(mod))
+        
+        d.sync()
+
+    time.sleep(0.5)
+    
+    send_key(XK.XK_Return)
+    time.sleep(0.2)
+    
+    send_key(XK.XK_v, modifiers=[XK.XK_Control_L])
+    time.sleep(0.2)
+    
+    send_key(XK.XK_Return)
+    d.close()
+
 
 def main():
     spotify_client_id = os.getenv("SPOTIFY_CLIENT_ID")
@@ -79,9 +111,6 @@ def main():
             track_name = track['name']
             
             prompt = generate_announcement_prompt(track_name, artist_names)
-            print("--- Generated Prompt for LLM ---")
-            print(prompt)
-            print("--------------------------------")
 
             response = llm(
                 prompt,
@@ -93,10 +122,13 @@ def main():
             text_response = response["choices"][0]["text"].strip()
             print(text_response)
 
+            pyperclip.copy(text_response)
+            simulate_broadcast()
+
         else:
             print("No track is currently playing.")
 
-        time.sleep(5)
+        time.sleep(20)
 
 
 if __name__ == "__main__":
