@@ -13,6 +13,7 @@ When playing [Holdfast: Nations At War](https://steamcommunity.com/app/589290), 
 Therefore, I decided to make a this small script to essentially create a radio presenter for the currently playing Spotify song.
 
 
+# Getting Started
 
 Quick start
 
